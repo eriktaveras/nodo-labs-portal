@@ -1,0 +1,36 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Versión a restaurar (tag, por ejemplo v1.0.0)
+        required: true
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Verificar que la versión existe
+        run: git describe --tags --exact-match
+
+      # Sin los secretos de Coolify el job solo deja constancia: sirve para la demo sin servidor real.
+      - name: Redesplegar en Coolify
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_PROD_UUID: ${{ secrets.COOLIFY_PROD_UUID }}
+        run: |
+          if [ -z "$COOLIFY_TOKEN" ]; then
+            echo "::notice::Modo demo: se restauraría ${{ inputs.version }} (faltan los secretos de Coolify)"
+            exit 0
+          fi
+          curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_PROD_UUID&force=true"
+
+      - name: Resumen
+        run: echo "### Rollback a ${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"

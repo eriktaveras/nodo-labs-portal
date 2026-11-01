@@ -1,0 +1,17 @@
+{
+  "name": "nodo-labs-portal",
+  "version": "1.0.0",
+  "description": "Portal de clientes de Nodo Labs (empresa ficticia) para la demo de CI/CD con n8n",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "lint": "node --check src/app.js && node --check src/server.js"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "license": "MIT"
+}
