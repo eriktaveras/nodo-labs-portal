@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Versión a restaurar (tag, por ejemplo v1.0.0)
+        description: Versión a restaurar (tag, por ejemplo v2.4.0)
         required: true
 
 jobs:
@@ -15,22 +15,30 @@ jobs:
         with:
           ref: ${{ inputs.version }}
 
-      - name: Verificar que la versión existe
-        run: git describe --tags --exact-match
+      - name: Resolver el commit del tag
+        id: tag
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # Sin los secretos de Coolify el job solo deja constancia: sirve para la demo sin servidor real.
-      - name: Redesplegar en Coolify
+      - name: Fijar la versión en Coolify y redesplegar
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          COOLIFY_PROD_UUID: ${{ secrets.COOLIFY_PROD_UUID }}
+          APP: ${{ secrets.COOLIFY_PROD_UUID }}
+          SHA: ${{ steps.tag.outputs.sha }}
+          VERSION: ${{ inputs.version }}
         run: |
           if [ -z "$COOLIFY_TOKEN" ]; then
-            echo "::notice::Modo demo: se restauraría ${{ inputs.version }} (faltan los secretos de Coolify)"
+            echo "::notice::Modo demo: se restauraría $VERSION ($SHA)"
             exit 0
           fi
-          curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" \
-            "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_PROD_UUID&force=true"
+          auth="Authorization: Bearer $COOLIFY_TOKEN"
+          curl -fsS -X PATCH -H "$auth" -H "Content-Type: application/json" \
+            -d "{\"git_commit_sha\":\"$SHA\"}" "$COOLIFY_URL/api/v1/applications/$APP"
+          curl -fsS -X PATCH -H "$auth" -H "Content-Type: application/json" \
+            -d "{\"key\":\"APP_VERSION\",\"value\":\"$VERSION\",\"is_preview\":false,\"is_runtime\":true,\"is_buildtime\":false,\"is_literal\":true}" \
+            "$COOLIFY_URL/api/v1/applications/$APP/envs"
+          curl -fsS -H "$auth" "$COOLIFY_URL/api/v1/deploy?uuid=$APP&force=true"
 
       - name: Resumen
-        run: echo "### Rollback a ${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+        run: echo "### Rollback a ${{ inputs.version }} (${{ steps.tag.outputs.sha }})" >> "$GITHUB_STEP_SUMMARY"
