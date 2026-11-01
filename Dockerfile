@@ -6,5 +6,4 @@ COPY src ./src
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION PORT=3000
 EXPOSE 3000
-HEALTHCHECK CMD wget -qO- http://127.0.0.1:3000/health || exit 1
 CMD ["node", "src/server.js"]
