@@ -30,6 +30,12 @@ export function crearApp() {
     res.json(pedido);
   });
 
+  app.post('/api/tarjetas', (req, res) => {
+    const numero = String(req.body?.numero || '');
+    if (!/^\d{16}$/.test(numero)) return res.status(400).json({ error: 'Número de tarjeta inválido' });
+    res.status(201).json({ guardada: true, terminacion: numero.slice(-4) });
+  });
+
   app.get('/api/resumen', (req, res) => {
     const total = pedidos.reduce((suma, p) => suma + p.total, 0);
     res.json({ pedidos: pedidos.length, total, moneda: 'DOP' });
