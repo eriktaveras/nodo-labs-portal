@@ -2,8 +2,6 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { crearApp } from '../src/app.js';
 
-process.env.PAGOS_API_URL = 'https://sandbox.pagos.test';
-
 const servidor = crearApp().listen(0);
 const base = `http://127.0.0.1:${servidor.address().port}`;
 after(() => servidor.close());
