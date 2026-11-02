@@ -38,7 +38,8 @@ export function crearApp() {
 
   app.get('/api/resumen', (req, res) => {
     const total = pedidos.reduce((suma, p) => suma + p.total, 0);
-    res.json({ pedidos: pedidos.length, total, moneda: 'DOP' });
+    const pendientes = pedidos.filter(p => p.estado !== 'entregado').length;
+    res.json({ pedidos: pedidos.length, pendientes, total, moneda: 'DOP' });
   });
 
   return app;
