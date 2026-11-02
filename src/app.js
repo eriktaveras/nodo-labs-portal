@@ -17,7 +17,10 @@ export function crearApp() {
     if (process.env.SIMULAR_CAIDA === 'true') {
       return res.status(503).json({ status: 'caido', version: VERSION });
     }
-    res.json({ status: 'ok', version: VERSION });
+    if (!process.env.PAGOS_API_URL) {
+      return res.status(503).json({ status: 'sin pasarela de pagos', version: VERSION });
+    }
+    res.json({ status: 'ok', version: VERSION, pagos: 'conectado' });
   });
 
   app.get('/api/pedidos', (req, res) => {
